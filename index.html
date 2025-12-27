@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Me gustas 💚</title>
+
+<style>
+  body {
+    margin: 0;
+    background: black;
+    overflow: hidden;
+    font-family: cursive;
+  }
+
+  canvas {
+    display: block;
+  }
+
+  #center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: #6cf;
+    opacity: 0;
+    transition: opacity 2s;
+    text-shadow: 0 0 20px #6cf;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .phrase {
+    position: absolute;
+    color: #6cf;
+    font-size: 22px;
+    opacity: 0;
+    transition: all 1s ease;
+    text-shadow: 0 0 10px #6cf;
+    white-space: nowrap;
+    z-index: 2;
+    pointer-events: none;
+  }
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+<div id="center">Me gustas 💚</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+// 💚 FRASES
+const phrases = [
+  "Tu forma de expresarte",
+  "Tu cariño",
+  "Tu bella sonrisa",
+  "Tu motivación",
+  "Admiro tu esfuerzo",
+  "Y hasta tus enojos conmigo",
+  "La forma en que me miras",
+  "La forma en que me tratas"
+];
+
+// 📍 POSICIONES
+const positions = [
+  { x: "50%", y: "18%" },
+  { x: "78%", y: "50%" },
+  { x: "50%", y: "86%" },
+  { x: "22%", y: "50%" }
+];
+
+let phraseIndex = 0;
+let activePhrases = [];
+const centerText = document.getElementById("center");
+
+// ❤️ CORAZÓN
+function heartPoint(t, s = 16) {
+  return {
+    x: s * Math.pow(Math.sin(t), 3),
+    y: -(13 * Math.cos(t) -
+         5 * Math.cos(2*t) -
+         2 * Math.cos(3*t) -
+         Math.cos(4*t))
+  };
+}
+
+// 💓 LATIDO
+let pulse = 0;
+
+// ✨ PARTÍCULAS
+class Particle {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = canvas.height + Math.random() * 200;
+    this.vy = Math.random() * 2 + 1;
+    this.vx = 0;
+    this.vy2 = 0;
+    this.target = null;
+  }
+
+  update() {
+    if (phase === 0) this.y -= this.vy;
+
+    if ((phase === 1 || phase === 3) && this.target) {
+      this.x += (this.target.x - this.x) * 0.05;
+      this.y += (this.target.y - this.y) * 0.05;
+    }
+
+    if (phase === 2) {
+      this.x += this.vx;
+      this.y += this.vy2;
+      this.vx *= 0.97;
+      this.vy2 *= 0.97;
+    }
+  }
+
+  draw() {
+    ctx.fillStyle = "#6cf";
+    ctx.fillRect(this.x, this.y, 2, 2);
+  }
+}
+
+let particles = [];
+let phase = 0;
+let timer = 0;
+
+function createParticles() {
+  particles = [];
+  for (let i = 0; i < 800; i++) {
+    particles.push(new Particle());
+  }
+}
+
+function setHeartTargets(beat) {
+  particles.forEach((p, i) => {
+    const t = (i / particles.length) * Math.PI * 2;
+    const pos = heartPoint(t);
+    p.target = {
+      x: canvas.width / 2 + pos.x * 12 * beat,
+      y: canvas.height / 2 + pos.y * 12 * beat
+    };
+  });
+}
+
+// ❤️ ANIMACIÓN
+function animate() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  timer++;
+
+  // 💓 calcular latido
+  pulse += 0.03;
+  const beat = 1 + Math.sin(pulse) * 0.05;
+
+  if (phase === 0 && timer > 120) {
+    phase = 1;
+    timer = 0;
+    setHeartTargets(beat);
+  }
+
+  if (phase === 1 && timer > 200) {
+    phase = 2;
+    timer = 0;
+    particles.forEach(p => {
+      p.vx = (Math.random() - 0.5) * 6;
+      p.vy2 = (Math.random() - 0.5) * 6;
+    });
+  }
+
+  if (phase === 2 && timer > 120) {
+    phase = 3;
+    timer = 0;
+    setHeartTargets(beat);
+  }
+
+  if (phase === 3) {
+    setHeartTargets(beat); // 💓 latido continuo
+    if (timer === 120) {
+      centerText.style.opacity = 1;
+      setTimeout(startPhrases, 2000);
+    }
+  }
+
+  particles.forEach(p => {
+    p.update();
+    p.draw();
+  });
+
+  requestAnimationFrame(animate);
+}
+
+// 📝 FRASES
+function startPhrases() {
+  showNextPhrase();
+}
+
+function showNextPhrase() {
+  if (phraseIndex >= phrases.length) return;
+
+  if (activePhrases.length === 4) {
+    activePhrases.forEach(el => {
+      el.style.opacity = 0;
+      setTimeout(() => el.remove(), 1000);
+    });
+    activePhrases = [];
+  }
+
+  const div = document.createElement("div");
+  div.className = "phrase";
+  div.innerText = phrases[phraseIndex];
+
+  const pos = positions[activePhrases.length];
+  div.style.left = pos.x;
+  div.style.top = pos.y;
+  div.style.transform = "translate(-50%, -50%) scale(0.8)";
+
+  document.body.appendChild(div);
+  activePhrases.push(div);
+
+  setTimeout(() => {
+    div.style.opacity = 1;
+    div.style.transform = "translate(-50%, -50%) scale(1)";
+  }, 100);
+
+  phraseIndex++;
+  setTimeout(showNextPhrase, 3000);
+}
+
+// 🚀 INICIO
+createParticles();
+animate();
+</script>
+
+</body>
+</html>
