@@ -46,12 +46,18 @@
 
 <body>
 
+<!-- 🎵 MÚSICA -->
+<audio id="music" autoplay loop muted playsinline>
+  <source src="musica.mp3" type="audio/mpeg">
+</audio>
+
 <canvas id="canvas"></canvas>
 <div id="center">Me gustas 💚</div>
 
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+const music = document.getElementById("music");
 
 function resize() {
   canvas.width = innerWidth;
@@ -59,6 +65,17 @@ function resize() {
 }
 resize();
 window.addEventListener("resize", resize);
+
+// 🔊 intentar activar sonido automáticamente
+window.addEventListener("load", () => {
+  music.play().then(() => {
+    setTimeout(() => {
+      music.muted = false;
+    }, 1000);
+  }).catch(() => {
+    console.log("El navegador bloqueó el audio automático");
+  });
+});
 
 // 💚 FRASES
 const phrases = [
@@ -162,7 +179,6 @@ function animate() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
   timer++;
 
-  // 💓 calcular latido
   pulse += 0.03;
   const beat = 1 + Math.sin(pulse) * 0.05;
 
@@ -188,7 +204,7 @@ function animate() {
   }
 
   if (phase === 3) {
-    setHeartTargets(beat); // 💓 latido continuo
+    setHeartTargets(beat);
     if (timer === 120) {
       centerText.style.opacity = 1;
       setTimeout(startPhrases, 2000);
